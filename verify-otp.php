@@ -2,12 +2,16 @@
 session_start();
 include_once('config.php');
 
-// Turn on error reporting
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+if (!isset($_SESSION['emailid'])) {
+    header("Location: index.php"); // or signup.php
+    exit();
+}
 
+$email = $_SESSION['emailid']; 
 $msg = '';
+
+// Your remaining code follows...
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredOtp = $_POST['otp'];
