@@ -2,11 +2,19 @@
 session_start();
 include_once('config.php');
 
+// Turn on error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $msg = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredOtp = $_POST['otp'];
     $email = $_SESSION['emailid']; 
+
+    // DEBUG: Show what is being compared
+    echo "Session Email: " . htmlspecialchars($email) . "<br>";
 
     // Fetch OTP from DB
     $sql = "SELECT emailOtp FROM tblusers WHERE emailId = :email";
@@ -15,7 +23,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $query->execute();
     $row = $query->fetch(PDO::FETCH_ASSOC);
 
-    if ($row && $enteredOtp === $row['emailOtp']) {
+    if ($row) {
+        echo "Entered OTP: " . htmlspecialchars($enteredOtp) . "<br>";
+        echo "Stored OTP: " . htmlspecialchars($row['emailOtp']) . "<br>";
+    }
+
+    // Trim both values before comparison
+    if ($row && trim($enteredOtp) === trim($row['emailOtp'])) {
         // OTP is correct, update verification status
         $update = "UPDATE tblusers SET isEmailVerify = 1 WHERE emailId = :email";
         $stmt = $dbh->prepare($update);
@@ -24,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $_SESSION['verified'] = true;
         $_SESSION['face_enroll'] = true;
-        $_SESSION['user_id'] = getUserIdByEmail($email, $dbh); // You may already store this
+        $_SESSION['user_id'] = getUserIdByEmail($email, $dbh); // Optional
         header("Location: face_enroll.php");
         exit();
     } else {
@@ -41,7 +55,6 @@ function getUserIdByEmail($email, $dbh) {
     return $row ? $row['id'] : null;
 }
 ?>
-
 
 <!DOCTYPE html>
 <html>
@@ -67,7 +80,6 @@ function getUserIdByEmail($email, $dbh) {
             text-align: center;
             color: #fff;
             margin-bottom: 10px;
-
         }
         input[type="text"] {
             width: 100%;
@@ -79,7 +91,6 @@ function getUserIdByEmail($email, $dbh) {
             color: #fff;
             font-size: 14px;
         }
-
         input:focus {
             border-color: #777;
             outline: none;
@@ -110,9 +121,8 @@ function getUserIdByEmail($email, $dbh) {
         <button type="submit">Verify</button>
     </form>
     <?php if (!empty($msg)): ?>
-    <p class="message"><?php echo $msg; ?></p>
-<?php endif; ?>
-
+        <p class="message"><?php echo $msg; ?></p>
+    <?php endif; ?>
 </div>
 </body>
 </html>
